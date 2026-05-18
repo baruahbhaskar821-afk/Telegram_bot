@@ -19,7 +19,7 @@ from telegram.ext import (
     CallbackQueryHandler
 )
 
-BOT_TOKEN = "8734837398:AAFoSnyZYQx8pD-huYgAc3XNG_nYaB5mvVY"
+BOT_TOKEN = "8734837398:AAEoNQ5SWOmRKL6yaV5BctjDaMqO8ikMfPk"
 OWNER_ID = 8722144519
 DATA_FILE = "data.json"
 
