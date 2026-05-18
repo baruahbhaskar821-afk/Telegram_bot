@@ -22,7 +22,7 @@ from telegram.ext import (
     CallbackQueryHandler
 )
 
-BOT_TOKEN = os.environ.get("8873480138:AAEYCP_Tbvo3blS9uOS5OOxz01uO6REOm3k")
+BOT_TOKEN = "8873480138:AAEYCP_Tbvo3blS9uOS5OOxz01uO6REOm3k"
 
 OWNER_ID = 8722144519
 
