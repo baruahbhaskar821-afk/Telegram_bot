@@ -1,8 +1,11 @@
+# ================= CONFIG =================
+
 import json
 import asyncio
 import time
 import random
 import logging
+import os
 
 from telegram import (
     Update,
@@ -19,24 +22,23 @@ from telegram.ext import (
     CallbackQueryHandler
 )
 
-BOT_TOKEN = "8734837398:AAEoNQ5SWOmRKL6yaV5BctjDaMqO8ikMfPk"
+BOT_TOKEN = os.environ.get("8873480138:AAEYCP_Tbvo3blS9uOS5OOxz01uO6REOm3k")
+
 OWNER_ID = 8722144519
-DATA_FILE = "data.json"
 
-# ================= START PANEL =================
+BOT_USERNAME = "@Newmuteauto_bot"
 
-BOT_USERNAME = "@Miyamuramusic_bot"
+MASTER_USERNAME = "@ll_DARK_GETO_ll"
 
 HOME_LINK = "https://t.me/+Yu4K5-9LHH1mM2Zl"
 
 PHOTO_URL = "https://ibb.co/Fqg7q2Hf"
 
+DATA_FILE = "data.json"
+
 # ================= LOGGING =================
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(message)s'
-)
+logging.basicConfig(level=logging.INFO)
 
 log = logging.getLogger(__name__)
 
@@ -45,21 +47,17 @@ SPAM_RUNNING = {}
 # ================= DATA =================
 
 def load_data():
+
     try:
-        with open(DATA_FILE, 'r') as f:
+        with open(DATA_FILE, "r") as f:
             return json.load(f)
 
     except:
+
         data = {
             "sudo_users": [],
             "mute_delete": [],
-            "tmute": {},
-            "stickers": [],
-            "shayari": {
-                "love": [],
-                "sad": [],
-                "birthday": []
-            }
+            "stickers": []
         }
 
         save_data(data)
@@ -68,42 +66,36 @@ def load_data():
 
 
 def save_data(data):
-    try:
-        with open(DATA_FILE, 'w') as f:
-            json.dump(data, f, indent=4)
 
-    except:
-        pass
+    with open(DATA_FILE, "w") as f:
+        json.dump(data, f, indent=4)
 
 # ================= UTILS =================
 
 def is_sudo(uid, data):
-    return uid == OWNER_ID or uid in data.get("sudo_users", [])
+
+    return (
+        uid == OWNER_ID or
+        uid in data["sudo_users"]
+    )
 
 
 def get_mention(user):
 
-    try:
-        if user.username:
-            return "@" + user.username
+    if user.username:
+        return f"@{user.username}"
 
-        return user.first_name or "User"
-
-    except:
-        return "User"
+    return user.first_name
 
 # ================= START =================
 
-async def start_command(
-    update: Update,
-    context: ContextTypes.DEFAULT_TYPE
-):
+async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     buttons = [
 
         [
             InlineKeyboardButton(
-                "➕ Add Me Group",
+                "➕ Add Me Your Group",
                 url=f"https://t.me/{BOT_USERNAME}?startgroup=true"
             )
         ],
@@ -118,31 +110,37 @@ async def start_command(
                 "🏠 My Home",
                 url=HOME_LINK
             )
+        ],
+
+        [
+            InlineKeyboardButton(
+                "👑 My Master",
+                url=f"https://t.me/{MASTER_USERNAME}"
+            )
         ]
     ]
 
-    keyboard = InlineKeyboardMarkup(buttons)
-
-    caption = """
+    text = f"""
 ✨ Welcome To My Bot ✨
 
 ⚡ Fast • Stable • Powerful
+
+👑 Master: @{MASTER_USERNAME}
+
+Only sudo users can use admin commands.
 
 Click Buttons Below 👇
 """
 
     await update.message.reply_photo(
         photo=PHOTO_URL,
-        caption=caption,
-        reply_markup=keyboard
+        caption=text,
+        reply_markup=InlineKeyboardMarkup(buttons)
     )
 
-# ================= BUTTONS =================
+# ================= BUTTON =================
 
-async def button_handler(
-    update: Update,
-    context: ContextTypes.DEFAULT_TYPE
-):
+async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     query = update.callback_query
 
@@ -150,39 +148,44 @@ async def button_handler(
 
     if query.data == "help":
 
-        help_text = """
-📚 BOT COMMANDS
+        txt = """
+📚 COMMANDS
 
-.alive
 .ping
-
-.spam 5 hello
-.spamstop
+.speed
+.info
 
 Reply User:
 .mute
 .unmute
-.tmute 60
+.ban
 
-Owner:
+Owner Only:
 .addsudo
-.sudolist
-.mutelist
+.delsudo
+.addsticker
+
+Reply Sticker:
+.addsticker
+
+.sticker 5
+
+Spam:
+.spam 10
+.stopspam
 """
 
         buttons = [
-
             [
                 InlineKeyboardButton(
                     "⬅ Back",
                     callback_data="back"
                 )
             ]
-
         ]
 
         await query.message.edit_caption(
-            caption=help_text,
+            caption=txt,
             reply_markup=InlineKeyboardMarkup(buttons)
         )
 
@@ -192,7 +195,7 @@ Owner:
 
             [
                 InlineKeyboardButton(
-                    "➕ Add Me Group",
+                    "➕ Add Me Your Group",
                     url=f"https://t.me/{BOT_USERNAME}?startgroup=true"
                 )
             ],
@@ -207,14 +210,25 @@ Owner:
                     "🏠 My Home",
                     url=HOME_LINK
                 )
+            ],
+
+            [
+                InlineKeyboardButton(
+                    "👑 My Master",
+                    url=f"https://t.me/{MASTER_USERNAME}"
+                )
             ]
         ]
 
         await query.message.edit_caption(
-            caption="""
+            caption=f"""
 ✨ Welcome To My Bot ✨
 
 ⚡ Fast • Stable • Powerful
+
+👑 Master: @{MASTER_USERNAME}
+
+Only sudo users can use admin commands.
 
 Click Buttons Below 👇
 """,
@@ -232,9 +246,6 @@ async def auto_delete(update, context, data):
 
     uid = msg.from_user.id
 
-    if uid == OWNER_ID or is_sudo(uid, data):
-        return
-
     if uid in data["mute_delete"]:
 
         try:
@@ -245,12 +256,7 @@ async def auto_delete(update, context, data):
 
 # ================= MAIN HANDLER =================
 
-async def handler(
-    update: Update,
-    context: ContextTypes.DEFAULT_TYPE
-):
-
-    global SPAM_RUNNING
+async def handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     msg = update.message
 
@@ -259,7 +265,7 @@ async def handler(
 
     data = load_data()
 
-    uid = msg.from_user.id if msg.from_user else 0
+    uid = msg.from_user.id
 
     chat_id = msg.chat.id
 
@@ -272,59 +278,96 @@ async def handler(
 
     await auto_delete(update, context, data)
 
-    # ================= BASIC =================
+    # ================= PING =================
 
-    if txt == ".alive":
+    if txt == ".ping" or txt == ".speed":
 
-        await msg.reply_text("✅ Online")
+        start = time.time()
 
-        return
+        m = await msg.reply_text("⚡ Checking speed...")
 
-    if txt == ".ping":
+        end = time.time()
 
-        await msg.reply_text("🏓 PONG!")
+        speed = round((end - start) * 1000)
 
-        return
-
-    # ================= SPAM =================
-
-    if txt == ".spamstop":
-
-        SPAM_RUNNING[chat_id] = False
-
-        await msg.reply_text("✅ Stopped!")
+        await m.edit_text(
+            f"⚡ Bot Speed: {speed} ms"
+        )
 
         return
 
-    if txt.startswith(".spam ") and is_sudo(uid, data):
+    # ================= INFO =================
+
+    if txt == ".info":
+
+        if not target:
+
+            await msg.reply_text(
+                "Reply to a user with .info"
+            )
+
+            return
+
+        user = target
+
+        user_id = user.id
+
+        first_name = user.first_name or "None"
+
+        last_name = user.last_name or "None"
+
+        username = (
+            f"@{user.username}"
+            if user.username else "None"
+        )
+
+        is_bot = user.is_bot
+
+        language = getattr(user, "language_code", "Unknown")
+
+        profile_link = f"tg://user?id={user_id}"
+
+        text_info = f"""
+👤 USER INFO
+
+🆔 User ID: `{user_id}`
+👤 First Name: {first_name}
+👥 Last Name: {last_name}
+🔗 Username: {username}
+🤖 Bot: {is_bot}
+🌐 Language: {language}
+📎 Profile: {profile_link}
+"""
 
         try:
-            parts = txt.split(" ", 2)
 
-            count = int(parts[1])
+            photos = await context.bot.get_user_profile_photos(
+                user_id,
+                limit=1
+            )
 
-            text = parts[2]
+            if photos.total_count > 0:
 
-            SPAM_RUNNING[chat_id] = True
+                photo = photos.photos[0][-1].file_id
 
-            for i in range(count):
-
-                if not SPAM_RUNNING.get(chat_id):
-                    break
-
-                await context.bot.send_message(
-                    chat_id,
-                    text
+                await msg.reply_photo(
+                    photo=photo,
+                    caption=text_info,
+                    parse_mode="Markdown"
                 )
 
-                await asyncio.sleep(0.5)
+            else:
 
-            SPAM_RUNNING[chat_id] = False
+                await msg.reply_text(
+                    text_info,
+                    parse_mode="Markdown"
+                )
 
         except:
 
             await msg.reply_text(
-                ".spam 10 hello"
+                text_info,
+                parse_mode="Markdown"
             )
 
         return
@@ -340,10 +383,12 @@ async def handler(
             save_data(data)
 
         await msg.reply_text(
-            get_mention(target) + " muted!"
+            f"{get_mention(target)} muted!"
         )
 
         return
+
+    # ================= UNMUTE =================
 
     if txt == ".unmute" and target and is_sudo(uid, data):
 
@@ -354,70 +399,202 @@ async def handler(
             save_data(data)
 
         await msg.reply_text(
-            get_mention(target) + " unmuted!"
+            f"{get_mention(target)} unmuted!"
         )
 
         return
 
-    # ================= EVERYONE =================
+    # ================= BAN =================
 
-    if txt == ".everyone" and is_sudo(uid, data):
+    if txt == ".ban" and target and is_sudo(uid, data):
 
-        await msg.reply_text("@everyone")
+        try:
+
+            await context.bot.ban_chat_member(
+                chat_id,
+                target.id
+            )
+
+            await msg.reply_text(
+                f"{get_mention(target)} banned!"
+            )
+
+        except Exception as e:
+
+            await msg.reply_text(
+                f"Error: {e}"
+            )
 
         return
 
-    # ================= OWNER =================
+    # ================= ADD STICKER =================
 
-    if uid == OWNER_ID:
+    if txt == ".addsticker" and uid == OWNER_ID:
 
-        if txt == ".sudolist":
+        if (
+            msg.reply_to_message and
+            msg.reply_to_message.sticker
+        ):
 
-            slist = (
-                "Sudo: " +
-                ", ".join(map(str, data["sudo_users"]))
+            sticker_id = (
+                msg.reply_to_message.sticker.file_id
             )
 
-            await msg.reply_text(slist or "Empty")
+            if sticker_id not in data["stickers"]:
 
-            return
-
-        if txt == ".mutelist":
-
-            mlist = (
-                "Mute: " +
-                ", ".join(map(str, data["mute_delete"]))
-            )
-
-            await msg.reply_text(mlist or "Empty")
-
-            return
-
-        if txt == ".addsudo" and target:
-
-            if target.id not in data["sudo_users"]:
-
-                data["sudo_users"].append(target.id)
+                data["stickers"].append(sticker_id)
 
                 save_data(data)
 
             await msg.reply_text(
-                get_mention(target) + " sudo added"
+                "✅ Sticker saved!"
+            )
+
+        else:
+
+            await msg.reply_text(
+                "Reply sticker first"
+            )
+
+        return
+
+    # ================= SEND STICKERS =================
+
+    if txt.startswith(".sticker"):
+
+        try:
+
+            count = int(txt.split(" ")[1])
+
+        except:
+
+            count = 1
+
+        stickers = data["stickers"]
+
+        if not stickers:
+
+            await msg.reply_text(
+                "No stickers saved"
             )
 
             return
+
+        for i in range(count):
+
+            sticker = random.choice(stickers)
+
+            await context.bot.send_sticker(
+                chat_id,
+                sticker
+            )
+
+            await asyncio.sleep(0.3)
+
+        return
+
+    # ================= ADD SUDO =================
+
+    if txt == ".addsudo" and target and uid == OWNER_ID:
+
+        if target.id not in data["sudo_users"]:
+
+            data["sudo_users"].append(target.id)
+
+            save_data(data)
+
+        await msg.reply_text(
+            f"{get_mention(target)} added as sudo"
+        )
+
+        return
+
+    # ================= DEL SUDO =================
+
+    if txt == ".delsudo" and target and uid == OWNER_ID:
+
+        if target.id in data["sudo_users"]:
+
+            data["sudo_users"].remove(target.id)
+
+            save_data(data)
+
+        await msg.reply_text(
+            f"{get_mention(target)} removed from sudo"
+        )
+
+        return
+
+    # ================= SPAM =================
+
+    if txt.startswith(".spam") and is_sudo(uid, data):
+
+        if not target:
+
+            await msg.reply_text(
+                "Reply user with .spam 10"
+            )
+
+            return
+
+        try:
+
+            count = int(txt.split(" ")[1])
+
+        except:
+
+            await msg.reply_text(
+                "Usage: .spam 10"
+            )
+
+            return
+
+        SPAM_RUNNING[chat_id] = True
+
+        mention_text = (
+            f"[{target.first_name}](tg://user?id={target.id})"
+        )
+
+        for i in range(count):
+
+            if not SPAM_RUNNING.get(chat_id):
+
+                break
+
+            await context.bot.send_message(
+                chat_id,
+                mention_text,
+                parse_mode="Markdown"
+            )
+
+            await asyncio.sleep(0.4)
+
+        SPAM_RUNNING[chat_id] = False
+
+        return
+
+    # ================= STOP SPAM =================
+
+    if txt == ".stopspam" and is_sudo(uid, data):
+
+        SPAM_RUNNING[chat_id] = False
+
+        await msg.reply_text(
+            "✅ Spam stopped"
+        )
+
+        return
 
 # ================= MAIN =================
 
 def main():
 
-    print("Starting bot...")
+    print("Bot running!")
 
     app = Application.builder().token(
         BOT_TOKEN
     ).build()
 
-    # Start Panel
     app.add_handler(
         CommandHandler(
             "start",
@@ -425,22 +602,18 @@ def main():
         )
     )
 
-    # Buttons
     app.add_handler(
         CallbackQueryHandler(
             button_handler
         )
     )
 
-    # Main Handler
     app.add_handler(
         MessageHandler(
             filters.ALL,
             handler
         )
     )
-
-    print("Bot running!")
 
     app.run_polling(
         drop_pending_updates=True
