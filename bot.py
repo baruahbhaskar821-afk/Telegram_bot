@@ -29,7 +29,7 @@ BOT_USERNAME = "@Miyamuramusic_bot"
 
 HOME_LINK = "https://t.me/+Yu4K5-9LHH1mM2Zl"
 
-PHOTO_URL = "AQADaxJrG3fwYFR-"
+PHOTO_URL = "https://ibb.co/Fqg7q2Hf"
 
 # ================= LOGGING =================
 
